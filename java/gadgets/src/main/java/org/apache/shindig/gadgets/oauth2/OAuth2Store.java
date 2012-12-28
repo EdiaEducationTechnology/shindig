@@ -18,6 +18,7 @@
  */
 package org.apache.shindig.gadgets.oauth2;
 
+import org.apache.shindig.auth.SecurityToken;
 import org.apache.shindig.common.crypto.BlobCrypter;
 import org.apache.shindig.gadgets.GadgetException;
 import org.apache.shindig.gadgets.oauth2.persistence.OAuth2Client;
@@ -85,7 +86,7 @@ public interface OAuth2Store {
    * @throws GadgetException
    *           if a lookup or creation error occurs
    */
-  OAuth2Accessor getOAuth2Accessor(String gadgetUri, String serviceName, String user, String scope)
+  OAuth2Accessor getOAuth2Accessor(SecurityToken securityToken, String gadgetUri, String serviceName, String user, String scope)
           throws GadgetException;
 
   /**

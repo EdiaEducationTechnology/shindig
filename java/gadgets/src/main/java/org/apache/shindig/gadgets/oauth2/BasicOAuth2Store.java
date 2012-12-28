@@ -21,10 +21,14 @@ package org.apache.shindig.gadgets.oauth2;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import org.apache.shindig.auth.SecurityToken;
 import org.apache.shindig.common.crypto.BlobCrypter;
+import org.apache.shindig.common.crypto.BlobCrypterException;
 import org.apache.shindig.common.servlet.Authority;
 import org.apache.shindig.gadgets.GadgetException;
 import org.apache.shindig.gadgets.GadgetException.Code;
+import org.apache.shindig.gadgets.oauth2.json.JsonClient;
+import org.apache.shindig.gadgets.oauth2.json.OpenSocialData;
 import org.apache.shindig.gadgets.oauth2.logger.FilteredLogger;
 import org.apache.shindig.gadgets.oauth2.persistence.OAuth2Cache;
 import org.apache.shindig.gadgets.oauth2.persistence.OAuth2CacheException;
@@ -34,6 +38,7 @@ import org.apache.shindig.gadgets.oauth2.persistence.OAuth2PersistenceException;
 import org.apache.shindig.gadgets.oauth2.persistence.OAuth2Persister;
 import org.apache.shindig.gadgets.oauth2.persistence.OAuth2TokenPersistence;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -171,7 +176,7 @@ public class BasicOAuth2Store implements OAuth2Store {
     return ret;
   }
 
-  public OAuth2Accessor getOAuth2Accessor(final String gadgetUri, final String serviceName,
+  public OAuth2Accessor getOAuth2Accessor(final SecurityToken securityToken, final String gadgetUri, final String serviceName,
           final String user, final String scope) throws GadgetException {
     final boolean isLogging = BasicOAuth2Store.LOG.isLoggable();
     if (isLogging) {
@@ -186,8 +191,29 @@ public class BasicOAuth2Store implements OAuth2Store {
     state.setScope(scope);
 
     OAuth2Accessor ret = this.cache.getOAuth2Accessor(state);
+    
+    //public JsonClient(String url, String ownerId, String viewerId, String  widgetId) {
+    
+    OpenSocialData osd;
+    
+    
+		try {
+			osd = new JsonClient(
+					"http://localhost/system/opensocial/oauthdata",
+					securityToken.getOwnerId(), securityToken.getViewerId(),
+					String.valueOf(securityToken.getModuleId()))
+					.retrieveJsonObject(OpenSocialData.class);
+		} catch (BlobCrypterException e) {
+			throw new GadgetException(
+					GadgetException.Code.INTERNAL_SERVER_ERROR, e);
+		} catch (IOException e) {
+			throw new GadgetException(
+					GadgetException.Code.INTERNAL_SERVER_ERROR, e);
+		}
+    
+    
 
-    if (ret == null || !ret.isValid()) {
+    //if (ret == null || !ret.isValid()) {
       final OAuth2Client client = this.getClient(gadgetUri, serviceName);
 
       if (client != null) {
@@ -204,8 +230,8 @@ public class BasicOAuth2Store implements OAuth2Store {
         newAccessor.setClientAuthenticationType(client.getClientAuthenticationType());
         newAccessor.setAuthorizationHeader(client.isAuthorizationHeader());
         newAccessor.setUrlParameter(client.isUrlParameter());
-        newAccessor.setClientId(client.getClientId());
-        newAccessor.setClientSecret(client.getClientSecret());
+        newAccessor.setClientId(osd.getOpenSocialConsumerKey());
+        newAccessor.setClientSecret(osd.getOpenSocialConsumerSecret().getBytes());
         newAccessor.setGrantType(client.getGrantType());
         newAccessor.setRedirectUri(client.getRedirectUri());
         newAccessor.setRefreshToken(refreshToken);
@@ -216,7 +242,7 @@ public class BasicOAuth2Store implements OAuth2Store {
 
         this.storeOAuth2Accessor(ret);
       }
-    }
+    
 
     if (isLogging) {
       BasicOAuth2Store.LOG.exiting(BasicOAuth2Store.LOG_CLASS, "getOAuth2Accessor", ret);

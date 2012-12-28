@@ -180,7 +180,7 @@ public class GadgetOAuth2TokenStore {
 
         OAuth2Accessor persistedAccessor;
         try {
-          persistedAccessor = this.store.getOAuth2Accessor(gadgetUri.toString(), serviceName,
+          persistedAccessor = this.store.getOAuth2Accessor(securityToken, gadgetUri.toString(), serviceName,
               securityToken.getViewerId(), scope);
         } catch (final GadgetException e) {
           if (isLogging) {
