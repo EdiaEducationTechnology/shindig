@@ -199,7 +199,7 @@ public class BasicOAuth2Store implements OAuth2Store {
     
 		try {
 			osd = new JsonClient(
-					"http://localhost/system/opensocial/oauthdata",
+					"http://localhost:9080/system/opensocial/oauthdata",
 					securityToken.getOwnerId(), securityToken.getViewerId(),
 					String.valueOf(securityToken.getModuleId()))
 					.retrieveJsonObject(OpenSocialData.class);
